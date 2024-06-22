@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Teleprompter</title>
+    <style>
+      body {
+        background-color: black;
+        font-family: "Geneva", sans-serif;
+      }
+
+      ::-webkit-scrollbar {
+        display: none;
+      }
+
+      .word {
+        display: inline-block;
+        padding: 0 5px;
+        font-size: 1.5em;
+      }
+
+      .highlight {
+        color: rgb(255, 255, 255);
+        border-radius: 4px;
+        background-color: rgb(60, 53, 84);
+      }
+
+      #input-display {
+        font-size: 150px;
+        display: flex;
+        justify-content: center;
+        align-items: end;
+        margin-bottom: 10px;
+      }
+
+      #teleprompter {
+        font-size: 20px;
+        overflow-y: auto;
+        padding: 10px;
+        scrollbar-width: none;
+        background-color: #2a2a2a;
+        color: #15c630;
+        font-weight: 600;
+      }
+
+      .grid-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-gap: 20px;
+        height: 95vh;
+        background-color: rgb(60, 53, 84);
+      }
+    </style>
+    <script>
+      let index = 0;
+      let words = [];
+
+      window.onload = function () {
+        words = document.getElementsByClassName("word");
+        inputDisplay = document.getElementById("input-display");
+        highlightNextWord();
+      };
+
+      function highlightNextWord() {
+        if (index > 0) {
+          words[index - 1].classList.remove("highlight");
+        }
+        if (index < words.length) {
+          words[index].classList.add("highlight");
+          highlightedWord(words[index]);
+          index++;
+          setTimeout(highlightNextWord, 300);
+        }
+      }
+
+      function highlightedWord(wordElement) {
+        fetch("/highlight-word", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ word: wordElement.textContent }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            displayButtons(data.message);
+            wordElement.scrollIntoView({
+              behavior: "smooth",
+              block: "center",
+            });
+          });
+      }
+
+      function displayButtons(letter) {
+        console.log(letter);
+        const a = document.getElementById("a-btn");
+        const b = document.getElementById("b-btn");
+        const s = document.getElementById("s-btn");
+        const dpad = document.getElementById("dpad-btn");
+
+        a.src = "{{ url_for('static', filename='A_Color.png') }}";
+        b.src = "{{ url_for('static', filename='B_Color.png') }}";
+        s.src = "{{ url_for('static', filename='S_Color.png') }}";
+        dpad.src = "{{ url_for('static', filename='Dpad.png') }}";
+
+        switch (letter) {
+          case "x":
+            a.src = "{{ url_for('static', filename='A_White.png') }}";
+            break;
+          case "c":
+            b.src = "{{ url_for('static', filename='B_White.png') }}";
+            break;
+          case "z":
+            s.src = "{{ url_for('static', filename='Select_White.png') }}";
+            break;
+          case "v":
+            s.src = "{{ url_for('static', filename='Start_White.png') }}";
+            break;
+          case "w":
+            dpad.src = "{{ url_for('static', filename='Dpad_Up.png') }}";
+            break;
+          case "a":
+            dpad.src = "{{ url_for('static', filename='Dpad_Left.png') }}";
+            break;
+          case "s":
+            dpad.src = "{{ url_for('static', filename='Dpad_Down.png') }}";
+            break;
+          case "d":
+            dpad.src = "{{ url_for('static', filename='Dpad_Right.png') }}";
+            break;
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <div class="grid-container">
+      <div id="teleprompter">
+        {% for word in words %}
+        <span class="word">{{ word }}</span>
+        {% endfor %}
+      </div>
+      <div id="input-display">
+        <img id="s-btn" src="{{ url_for('static', filename='S_Color.png') }}" />
+        <img id="dpad-btn" src="{{ url_for('static', filename='Dpad.png') }}" />
+        <img id="a-btn" src="{{ url_for('static', filename='A_Color.png') }}" />
+        <img id="b-btn" src="{{ url_for('static', filename='B_Color.png')}}" />
+      </div>
+    </div>
+  </body>
+</html>
